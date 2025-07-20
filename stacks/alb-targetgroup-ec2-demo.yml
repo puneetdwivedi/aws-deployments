@@ -1,0 +1,119 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: EC2 instance
+
+Parameters:
+    VpcId:
+        Type: AWS::EC2::VPC::Id
+        Description: VPC to deploy into
+
+    Subnet1:
+        Type: AWS::EC2::Subnet::Id
+        Description: Public subnet 1
+
+    Subnet2:
+        Type: AWS::EC2::Subnet::Id
+        Description: Public subnet 2
+
+Resources:
+    # ec2 instance
+    EC2Instance:
+        Type: AWS::EC2::Instance
+        Properties:
+            InstanceType: t2.micro
+            ImageId: ami-0a1235697f4afa8a4
+            SecurityGroupIds:
+                - !Ref EC2SecurityGroup
+                UserData:
+                Fn::Base64: !Sub |
+                    #!/bin/bash
+                    exec > /var/log/user-data.log 2>&1
+
+                    # Install Node.js and Git
+                    curl -fsSL https://rpm.nodesource.com/setup_18.x | bash -
+                    yum install -y nodejs git
+
+                    # Clone your repository
+                    cd /home/ec2-user
+                    git clone https://github.com/puneetdwivedi/demo-app.git
+                    cd demo-app
+
+                    # Install dependencies
+                    npm install
+
+                    # Install and use PM2 to keep app running
+                    npm install -g pm2
+                    pm2 start ./src/index.js
+                    pm2 startup systemd -u ec2-user --hp /home/ec2-user
+                    sudo env PATH=$PATH:/usr/bin pm2 startup systemd -u ec2-user --hp /home/ec2-user
+                    pm2 save
+
+    # ec2 security group
+    EC2SecurityGroup:
+        Type: AWS::EC2::SecurityGroup
+        Properties:
+            GroupDescription: "Security group for ec2 instance"
+            VpcId: !Ref VpcId
+            SecurityGroupIngress:
+                - IpProtocol: tcp
+                  FromPort: 22
+                  ToPort: 22
+                  CidrIp: 0.0.0.0/0
+
+                - IpProtocol: tcp
+                  FromPort: 3000
+                  ToPort: 3000
+                  # CidrIp: 0.0.0.0/0
+                  SourceSecurityGroupId: !Ref ALBSecurityGroup
+
+    # ec2 target group
+    EC2TargetGroup:
+        Type: AWS::ElasticLoadBalancingV2::TargetGroup
+        Properties:
+            VpcId: !Ref VpcId
+            Protocol: HTTP
+            Port: 3000
+            TargetType: instance
+            HealthCheckPath: /
+            HealthCheckPort: traffic-port
+            HealthCheckProtocol: HTTP
+            Targets:
+                - Id: !Ref EC2Instance
+                  Port: 3000
+
+    # load balancer security group
+    ALBSecurityGroup:
+        Type: AWS::EC2::SecurityGroup
+        Properties:
+            GroupDescription: Allow HTTP and HTTPS from the web
+            VpcId: !Ref VpcId
+            SecurityGroupIngress:
+                - IpProtocol: tcp
+                  FromPort: 80
+                  ToPort: 80
+                  CidrIp: 0.0.0.0/0
+                - IpProtocol: tcp
+                  FromPort: 443
+                  ToPort: 443
+                  CidrIp: 0.0.0.0/0
+
+    # load balancer
+    LoadBalancer:
+        Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+        Properties:
+            Type: application
+            Subnets:
+                - !Ref Subnet1
+                - !Ref Subnet2
+            SecurityGroups:
+                - !Ref ALBSecurityGroup
+
+    # listner to configure target group to load balancer
+    MyListener:
+        Type: AWS::ElasticLoadBalancingV2::Listener
+        Properties:
+            LoadBalancerArn: !Ref LoadBalancer
+            Port: 80
+            Protocol: HTTP
+            DefaultActions:
+                - Type: forward
+                  TargetGroupArn: !Ref EC2TargetGroup
