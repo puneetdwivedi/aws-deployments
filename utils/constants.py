@@ -15,5 +15,5 @@ AWS_DEFAULT_REGION = os.getenv("AWS_DEFAULT_REGION")
 # constants
 EXTERNAL_S3_DATA_BUCKET = "project-partials-1745563858222"
 EC2_CFT_STACK_NAME = "ec2-instance-stack"
-EC2_CFT_FILE_NAME = "ec2-instance.yml"
+EC2_CFT_FILE_NAME = "stack-deploy.yml"
 EC2_CFT_STACK_TEMPLATE_URL = f"https://{EXTERNAL_S3_DATA_BUCKET}.s3.{AWS_DEFAULT_REGION}.amazonaws.com/{EC2_CFT_FILE_NAME}"

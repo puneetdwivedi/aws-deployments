@@ -1,0 +1,32 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: RDS Cluster
+
+Parameters:
+  VpcId:
+    Type: AWS::EC2::VPC::Id
+    Description: VPC to deploy into
+
+  Subnet1:
+    Type: AWS::EC2::Subnet::Id
+    Description: Public subnet 1
+
+  Subnet2:
+    Type: AWS::EC2::Subnet::Id
+    Description: Public subnet 2
+
+Resources:
+  ECSCluster:
+    ClusterName: web-app-cluster
+
+  ECSService:
+    Type: AWS::ECS::Service
+    Properties:
+      Cluster: !Ref ECSCluster
+      DeploymentConfiguration:
+        MaximumPercent: 200
+        MinimumHealthyPercent: 50
+        DeploymentCircuitBreaker:
+          Enable: true
+          Rollback: true
+        DesiredCount: 2
+        LaunchType: EC2

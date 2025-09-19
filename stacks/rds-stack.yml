@@ -1,0 +1,54 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: RDS Cluster
+
+Parameters:
+  VpcId:
+    Type: AWS::EC2::VPC::Id
+    Description: VPC to deploy into
+
+  Subnet1:
+    Type: AWS::EC2::Subnet::Id
+    Description: Public subnet 1
+
+  Subnet2:
+    Type: AWS::EC2::Subnet::Id
+    Description: Public subnet 2
+
+Resources:
+
+  # MyDBSecurityGroup:
+  #   Type: AWS::EC2::SecurityGroup
+  #   Properties:
+  #     GroupDescription: Security group for RDS DB
+  #     VpcId: !Ref VpcId
+  #     SecurityGroupIngress:
+  #       - IpProtocol: tcp
+  #         FromPort: 5432
+  #         ToPort: 5432
+  #         CidrIp: 0.0.0.0/0 
+  #     Tags:
+  #       - Key: Name
+  #         Value: MyDBSecurityGroup
+
+  # RDSCLuster:
+  #   Type: AWS::RDS::DBCluster
+  #   Properties:
+  #     BackupRetentionPeriod: 2
+  #     Engine: aurora-postgresql
+  #     EngineVersion: 16.6
+  #     DatabaseName: myappdb
+  #     DBClusterIdentifier: rds-cluster-version-3
+  #     MasterUsername: adminusername
+  #     Port: 5432
+  #     ManageMasterUserPassword: true
+  #     SourceDBClusterIdentifier: rds-cluster-version-2
+  #     RestoreToTime: "2025-08-24T16:30:00Z"
+
+  # DBInstance:
+  #   Type: AWS::RDS::DBInstance
+  #   Properties:
+  #     DBClusterIdentifier: !Ref RDSCLuster
+  #     DBInstanceClass: db.r6g.large
+  #     Engine: aurora-postgresql
+  #     PubliclyAccessible: true
+  #     DBInstanceIdentifier: rds-instance-version-3
